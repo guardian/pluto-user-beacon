@@ -6,5 +6,5 @@ services:
 build:
   stage: build
   script:
-    - docker build . guardianmultimedia/pluto-user-beacon:$CI_JOB_ID
+    - docker build . -t guardianmultimedia/pluto-user-beacon:$CI_JOB_ID
     - docker push guardianmultimedia/pluto-user-beacon:$CI_JOB_ID
