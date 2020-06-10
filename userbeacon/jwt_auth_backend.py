@@ -33,14 +33,22 @@ class JwtAuth(object):
                                      issuer=getattr(settings, "JWT_EXPECTED_ISSUER", None))
                 logger.info("JwtAuth success")
 
+                if hasattr(settings,"ADMIN_CLAIM_NAME"):
+                    if decoded.get(settings.ADMIN_CLAIM_NAME, None) is not None:
+                        user_is_admin = True
+                    else:
+                        user_is_admin = False
+                else:
+                    user_is_admin = False
+
                 return User(
                     username=decoded.get("username"),
                     first_name=decoded.get("first_name"),
                     last_name=decoded.get("family_name"),
                     email=decoded.get("email"),
-                    is_staff=True,
+                    is_staff=user_is_admin,
                     is_active=True,
-                    is_superuser=True   #until we have groups added in to the JWT claim
+                    is_superuser=user_is_admin
                 )
             except jwt.exceptions.DecodeError as e:
                 logger.error("Could not decode provided JWT: {0}".format(e))

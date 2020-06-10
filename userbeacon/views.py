@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from .jwt_auth_backend import JwtRestAuth
 from django.contrib.auth.models import User
 import logging
-
+import json
 logger = logging.getLogger(__name__)
 
 
@@ -38,12 +38,36 @@ class BeaconView(APIView):
         :param comm: VSCommunicator instance to perform the request
         :return: a Django response to return directly to the client
         """
+        from .vscommunicator import VSCommunicator, HttpError, HttpTimeoutError
+        user_group_list = []
+        if user_record.is_superuser:
+            user_group_list = [{
+                "groupName": "_special_all",
+                "role": False,
+            }]
+        else:
+            user_group_list = []
+
         request_data = {
             "userName": user_record.username,
             "realName": user_record.first_name + " " + user_record.last_name,
-            "groupList": [],
+            "groupList": {
+                "group": user_group_list,
+            },
         }
-        comm.do_post("/API/user", request_data)
+        try:
+            comm.do_post("/API/user", request_data)
+        except HttpTimeoutError as e:
+            logger.error("Vidispine seems down! Timed out checking user: {0}".format(e))
+            return Response({"status":"error","detail":"Could not communicate with Vidispine"},status=500)
+        except HttpError as e:
+            logger.error("Could not communicate with Vidispine: {0}".format(e))
+            logger.error("Error response was {0}".format(e.response_body))
+            return Response({"status":"error","detail":"Could not communicate with Vidispine"},status=500)
+        except json.decoder.JSONDecodeError:    #does not matter if the body fails to parse, we are not interested (spec says it is empty)
+            pass
+
+        return Response({"status": "ok"})
 
     def put(self, request):
         """
@@ -60,18 +84,26 @@ class BeaconView(APIView):
             return Response({"status":"ok"})
 
         comm = VSCommunicator()
+        user_create_required = True
         try:
             comm.do_get("/API/user/{0}".format(self.request.user.username))
+            logger.info("User {0} already exists in Vidispine".format(self.request.user.username))
             #if we get here, then we got a 200 response and the user exists, happy times.
-            return Response({"status":"ok"})
+            user_create_required = False
         except HttpTimeoutError as e:
             logger.error("Vidispine seems down! Timed out checking user: {0}".format(e))
             return Response({"status":"error","detail":"Could not communicate with Vidispine"},status=500)
         except HttpError as e:
-            if e.response_code==403:
+            if e.response_code==404:
                 #user does not exist, so we should create it
-                return self.create_vs_user(self.request.user, comm)
+                logger.info("User {0} does not exist in Vidispine, creating".format(self.request.user.username))
+                user_create_required = True
             else:
                 logger.error("Could not communicate with Vidispine: {0}".format(e))
                 logger.error("Error response was {0}".format(e.response_body))
                 return Response({"status":"error","detail":"Could not communicate with Vidispine"},status=500)
+
+        if user_create_required:
+            return self.create_vs_user(self.request.user, comm)
+        else:
+            return Response({"status":"ok"})

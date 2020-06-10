@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 class HttpTimeoutError(Exception):
     pass
 
+
 class HttpError(Exception):
     def __init__(self, target_url, response_code, response_body, response_headers):
         self.target_url = target_url
@@ -27,6 +28,7 @@ class VSCommunicator(object):
     def __init__(self):
         self.retry_wait = 5 #in seconds
         self.max_retries = 10
+        self.verify = settings.SSL_VERIFY if hasattr(settings,"SSL_VERIFY") else True
 
     def do_get(self, urlpath):
         """
@@ -38,7 +40,7 @@ class VSCommunicator(object):
                                requests.get(full_url,auth=(settings.VIDISPINE_ADMIN_USER,settings.VIDISPINE_ADMIN_PASSWORD),
                                                       headers={
                                                           "Accept": "application/json"
-                                                      }))
+                                                      }, verify=self.verify))
 
     def do_post(self, urlpath, body_content):
         """
@@ -50,7 +52,7 @@ class VSCommunicator(object):
         return self.do_generic(urlpath, lambda full_url:
                                requests.post(full_url, json=body_content,
                                              auth=(settings.VIDISPINE_ADMIN_USER, settings.VIDISPINE_ADMIN_PASSWORD),
-                                             headers={"Accept":"application/json"}))
+                                             headers={"Accept":"application/json"}, verify=self.verify))
 
     def do_generic(self, urlpath, requestlambda, attempt=0):
         """
