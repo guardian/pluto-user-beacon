@@ -2,6 +2,7 @@ import requests
 from django.conf import settings
 import logging
 import time
+import requests.exceptions
 
 logger = logging.getLogger(__name__)
 

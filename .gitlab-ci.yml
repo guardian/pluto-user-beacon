@@ -1,0 +1,10 @@
+image: docker:19.03.11
+
+services:
+  - docker:dind
+
+build:
+  stage: build
+  script:
+    - docker build . guardianmultimedia/pluto-user-beacon:$CI_JOB_ID
+    - docker push guardianmultimedia/pluto-user-beacon:$CI_JOB_ID
