@@ -2,9 +2,12 @@ image: docker:19.03.11
 
 services:
   - docker:dind
-
+  
+before_script:
+  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  
 build:
   stage: build
   script:
-    - docker build . -t guardianmultimedia/pluto-user-beacon:$CI_JOB_ID
-    - docker push guardianmultimedia/pluto-user-beacon:$CI_JOB_ID
+    - docker build . -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
