@@ -15,7 +15,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from .views import HealthCheckView, BeaconView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('is-online', HealthCheckView.as_view()),
+    path('register-login', BeaconView.as_view())
 ]
