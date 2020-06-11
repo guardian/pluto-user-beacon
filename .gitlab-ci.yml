@@ -9,6 +9,7 @@ before_script:
 build:
   stage: build
   script:
+    - echo $DOCKER_HOST
     - docker build . -t "$CI_REGISTRY_IMAGE:$CI_PIPELINE_IID"
     - docker push "$CI_REGISTRY_IMAGE:$CI_PIPELINE_IID"
     
