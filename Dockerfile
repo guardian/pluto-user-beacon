@@ -11,4 +11,4 @@ RUN chown -R nobody /opt/pluto-userbeacon
 ENV PYTHONPATH=/opt/pluto-userbeacon
 WORKDIR /opt/pluto-userbeacon
 USER nobody
-CMD uwsgi --http :9000 --enable-threads --module userbeacon.wsgi
+CMD uwsgi --http :9000 --enable-threads -L --module userbeacon.wsgi
