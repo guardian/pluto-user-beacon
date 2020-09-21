@@ -4,12 +4,12 @@ services:
   - docker:dind
   
 before_script:
-  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  - docker login -u "${DOCKER_USER}" -p "${DOCKER_PAT}"
   
 build:
   stage: build
   script:
     - echo $DOCKER_HOST
-    - docker build . -t "$CI_REGISTRY_IMAGE:$CI_PIPELINE_IID"
-    - docker push "$CI_REGISTRY_IMAGE:$CI_PIPELINE_IID"
+    - docker build . -t "guardianmultimedia/pluto-userbeacon:$CI_PIPELINE_IID"
+    - docker push "guardianmultimedia/pluto-userbeacon:$CI_PIPELINE_IID"
     
