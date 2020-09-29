@@ -28,6 +28,9 @@ DEBUG = False
 
 ALLOWED_HOSTS = []
 
+## Groups to add to a user. These only take effect when a user is _created_
+ADMIN_USER_VSGROUPS = ["_special_all"]
+REGULAR_USER_VSGROUPS = []
 
 # Application definition
 

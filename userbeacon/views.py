@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .jwt_auth_backend import JwtRestAuth
 from django.contrib.auth.models import User
+from django.conf import settings
 import logging
 import json
 logger = logging.getLogger(__name__)
@@ -39,14 +40,13 @@ class BeaconView(APIView):
         :return: a Django response to return directly to the client
         """
         from .vscommunicator import VSCommunicator, HttpError, HttpTimeoutError
-        user_group_list = []
+
         if user_record.is_superuser:
-            user_group_list = [{
-                "groupName": "_special_all",
-                "role": False,
-            }]
+            raw_group_list = settings.ADMIN_USER_VSGROUPS
         else:
-            user_group_list = []
+            raw_group_list = settings.REGULAR_USER_VSGROUPS
+
+        user_group_list = [{"groupName": groupname, "role": False} for groupname in raw_group_list]
 
         request_data = {
             "userName": user_record.username,
