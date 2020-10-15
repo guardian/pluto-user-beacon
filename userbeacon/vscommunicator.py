@@ -55,6 +55,18 @@ class VSCommunicator(object):
                                              auth=(settings.VIDISPINE_ADMIN_USER, settings.VIDISPINE_ADMIN_PASSWORD),
                                              headers={"Accept":"application/json"}, verify=self.verify))
 
+    def do_put(self, urlpath):
+        """
+        perform a bare PUT request with no body. With retries. Raises on error, for details see `do_generic`
+        :param urlpath: URL to put
+        :return:
+        """
+        return self.do_generic(urlpath, lambda full_url:
+                               requests.put(full_url, auth=(settings.VIDISPINE_ADMIN_USER,settings.VIDISPINE_ADMIN_PASSWORD),
+                                            headers={
+                                                "Accept": "application/json"
+                                            }, verify=self.verify))
+
     def do_generic(self, urlpath, requestlambda, attempt=0):
         """
         error-catching wrapper for an http request. Recursively retries if a timeout is received
