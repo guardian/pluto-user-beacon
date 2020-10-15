@@ -19,5 +19,5 @@ from .views import HealthCheckView, BeaconView
 
 urlpatterns = [
     path('is-online', HealthCheckView.as_view()),
-    path('register-login', BeaconView.as_view())
+    path('register-login', BeaconView.as_view(), name="register-login")
 ]

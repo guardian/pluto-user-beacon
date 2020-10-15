@@ -57,14 +57,15 @@ class BeaconView(APIView):
         }
         comm.do_post("/API/user", request_data)
 
-    def set_import_acl(self, comm):
+    def set_import_acl(self, user_name, comm):
         """
         ensure that media imported by this user is read-write to other users in the group
         :param comm: VSCommunicator instance to perform the request
         :return:
         """
         for group_name in settings.REGULAR_USER_VSGROUPS:
-            comm.do_put("/API/import/access/group/{0}?permission=WRITE".format(group_name))
+            writeurl = "/API/import/access/group/{0}?permission=WRITE".format(group_name)
+            comm.do_put(writeurl, run_as=user_name)
 
     def put(self, request):
         """
@@ -75,8 +76,13 @@ class BeaconView(APIView):
         is actually created or not, for that see the logs
         """
         from .vscommunicator import VSCommunicator, HttpError, HttpTimeoutError
-        logger.info("Received beacon for login of {0}".format(self.request.user))
-        if not isinstance(self.request.user, User):
+
+        if request is None:
+            logger.error("No request data? Something is badly wrong.")
+            return Response({"status":"server_error","detail":"no request data"}, status=500)
+
+        logger.info("Received beacon for login of {0}".format(request.user))
+        if not isinstance(request.user, User):
             logger.warning("the provided user is not a User object, something weird is going on")
             return Response({"status":"ok"})
 
@@ -114,7 +120,7 @@ class BeaconView(APIView):
                 pass
 
         try:
-            self.set_import_acl(comm)
+            self.set_import_acl(self.request.user.username, comm)
         except HttpTimeoutError as e:
             logger.error("Vidispine seems down! Timed out checking user: {0}".format(e))
             return Response({"status":"error","detail":"Could not communicate with Vidispine"},status=500)

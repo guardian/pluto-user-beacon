@@ -55,17 +55,22 @@ class VSCommunicator(object):
                                              auth=(settings.VIDISPINE_ADMIN_USER, settings.VIDISPINE_ADMIN_PASSWORD),
                                              headers={"Accept":"application/json"}, verify=self.verify))
 
-    def do_put(self, urlpath):
+    def do_put(self, urlpath, run_as=None):
         """
         perform a bare PUT request with no body. With retries. Raises on error, for details see `do_generic`
         :param urlpath: URL to put
         :return:
         """
+        headers = {
+            "Accept": "application/json"
+        }
+        if run_as:
+            headers["RunAs"] = run_as
+            logger.info("Running PUT {0} as {1}".format(urlpath, run_as))
+
         return self.do_generic(urlpath, lambda full_url:
                                requests.put(full_url, auth=(settings.VIDISPINE_ADMIN_USER,settings.VIDISPINE_ADMIN_PASSWORD),
-                                            headers={
-                                                "Accept": "application/json"
-                                            }, verify=self.verify))
+                                            headers=headers, verify=self.verify))
 
     def do_generic(self, urlpath, requestlambda, attempt=0):
         """
