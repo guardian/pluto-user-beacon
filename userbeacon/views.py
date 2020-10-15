@@ -55,19 +55,17 @@ class BeaconView(APIView):
                 "group": user_group_list,
             },
         }
-        try:
-            comm.do_post("/API/user", request_data)
-        except HttpTimeoutError as e:
-            logger.error("Vidispine seems down! Timed out checking user: {0}".format(e))
-            return Response({"status":"error","detail":"Could not communicate with Vidispine"},status=500)
-        except HttpError as e:
-            logger.error("Could not communicate with Vidispine: {0}".format(e))
-            logger.error("Error response was {0}".format(e.response_body))
-            return Response({"status":"error","detail":"Could not communicate with Vidispine"},status=500)
-        except json.decoder.JSONDecodeError:    #does not matter if the body fails to parse, we are not interested (spec says it is empty)
-            pass
+        comm.do_post("/API/user", request_data)
 
-        return Response({"status": "ok"})
+    def set_import_acl(self, user_name, comm):
+        """
+        ensure that media imported by this user is read-write to other users in the group
+        :param comm: VSCommunicator instance to perform the request
+        :return:
+        """
+        for group_name in settings.REGULAR_USER_VSGROUPS:
+            writeurl = "/API/import/access/group/{0}?permission=WRITE".format(group_name)
+            comm.do_put(writeurl, run_as=user_name)
 
     def put(self, request):
         """
@@ -78,8 +76,13 @@ class BeaconView(APIView):
         is actually created or not, for that see the logs
         """
         from .vscommunicator import VSCommunicator, HttpError, HttpTimeoutError
-        logger.info("Received beacon for login of {0}".format(self.request.user))
-        if not isinstance(self.request.user, User):
+
+        if request is None:
+            logger.error("No request data? Something is badly wrong.")
+            return Response({"status":"server_error","detail":"no request data"}, status=500)
+
+        logger.info("Received beacon for login of {0}".format(request.user))
+        if not isinstance(request.user, User):
             logger.warning("the provided user is not a User object, something weird is going on")
             return Response({"status":"ok"})
 
@@ -104,6 +107,27 @@ class BeaconView(APIView):
                 return Response({"status":"error","detail":"Could not communicate with Vidispine"},status=500)
 
         if user_create_required:
-            return self.create_vs_user(self.request.user, comm)
-        else:
-            return Response({"status":"ok"})
+            try:
+                self.create_vs_user(self.request.user, comm)
+            except HttpTimeoutError as e:
+                logger.error("Vidispine seems down! Timed out checking user: {0}".format(e))
+                return Response({"status":"error","detail":"Could not communicate with Vidispine"},status=500)
+            except HttpError as e:
+                logger.error("Could not communicate with Vidispine: {0}".format(e))
+                logger.error("Error response was {0}".format(e.response_body))
+                return Response({"status":"error","detail":"Could not communicate with Vidispine"},status=500)
+            except json.decoder.JSONDecodeError:    #does not matter if the body fails to parse, we are not interested (spec says it is empty)
+                pass
+
+        try:
+            self.set_import_acl(self.request.user.username, comm)
+        except HttpTimeoutError as e:
+            logger.error("Vidispine seems down! Timed out checking user: {0}".format(e))
+            return Response({"status":"error","detail":"Could not communicate with Vidispine"},status=500)
+        except HttpError as e:
+            logger.error("Could not communicate with Vidispine: {0}".format(e))
+            logger.error("Error response was {0}".format(e.response_body))
+            return Response({"status":"error","detail":"Could not communicate with Vidispine"},status=500)
+        except json.decoder.JSONDecodeError:    #does not matter if the body fails to parse, we are not interested (spec says it is empty)
+            pass
+        return Response({"status":"ok"})

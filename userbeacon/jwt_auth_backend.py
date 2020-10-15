@@ -41,8 +41,12 @@ class JwtAuth(object):
                 else:
                     user_is_admin = False
 
+                actual_user = decoded.get("preferred_username") #keycloak prefers this
+                if actual_user is None:
+                    actual_user = decoded.get("username")       #adfs prefers this
+
                 return User(
-                    username=decoded.get("username"),
+                    username=actual_user,
                     first_name=decoded.get("first_name"),
                     last_name=decoded.get("family_name"),
                     email=decoded.get("email"),
