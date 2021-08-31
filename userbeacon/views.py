@@ -32,6 +32,17 @@ class BeaconView(APIView):
     authentication_classes = (JwtRestAuth, )
     permission_classes = (IsAuthenticated, )
 
+    @staticmethod
+    def safe_get_realname(user_record):
+        """
+        Builds a user "real name" (firstname, lastname) by concatenating the relevant fields from user_record.
+        Avoids any "can't concatenate None type" errors by filtering out null values.
+        :param user_record: django user record to interrogate
+        :return: a string representing the real name.  Returns an empty string if there is no name to check.
+        """
+        parts = filter(lambda x: x is not None, [user_record.first_name, user_record.last_name])
+        return " ".join(parts)
+
     def create_vs_user(self, user_record, comm):
         """
         ask VS to create a user for the given login
@@ -50,7 +61,7 @@ class BeaconView(APIView):
 
         request_data = {
             "userName": user_record.username,
-            "realName": user_record.first_name + " " + user_record.last_name,
+            "realName": self.safe_get_realname(user_record),
             "groupList": {
                 "group": user_group_list,
             },
