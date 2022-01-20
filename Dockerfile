@@ -1,4 +1,4 @@
-FROM python:3.8-alpine
+FROM python:3.9-alpine
 
 COPY requirements.txt /opt/pluto-userbeacon/requirements.txt
 WORKDIR /opt/pluto-userbeacon
