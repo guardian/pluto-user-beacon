@@ -4,6 +4,7 @@ services:
   - docker:dind
   
 before_script:
+  - apk add aws-cli
   - docker login -u "${DOCKER_USER}" -p "${DOCKER_PAT}"
   
 build:
