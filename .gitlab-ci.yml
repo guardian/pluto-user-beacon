@@ -4,14 +4,19 @@ services:
   - docker:dind
   
 before_script:
-  - docker login -u "${DOCKER_USER}" -p "${DOCKER_PAT}"
+  - apk add aws-cli
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   
 build:
   stage: build
   script:
     - echo $DOCKER_HOST
-    - docker build . -t "guardianmultimedia/pluto-userbeacon:$CI_PIPELINE_IID"
-    - docker push "guardianmultimedia/pluto-userbeacon:$CI_PIPELINE_IID"
+    - docker build . -t $CI_REGISTRY_IMAGE:$CI_PIPELINE_IID
+    - docker push $CI_REGISTRY_IMAGE:$CI_PIPELINE_IID
+    - if [ "${AWS_ACCESS_KEY_ID}" == "" ]; then echo Cannot upload to ECR without aws credential; exit 0; fi
+    - aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 855023211239.dkr.ecr.eu-west-1.amazonaws.com
+    - docker tag $CI_REGISTRY_IMAGE:$CI_PIPELINE_IID 855023211239.dkr.ecr.eu-west-1.amazonaws.com/pluto-user-beacon:$CI_PIPELINE_IID
+    - docker push 855023211239.dkr.ecr.eu-west-1.amazonaws.com/pluto-user-beacon:$CI_PIPELINE_IID
     - "echo ci_commit_branch: ${CI_COMMIT_BRANCH} >> build-info.yaml"
     - "echo ci_commit_ref_name: ${CI_COMMIT_REF_NAME} >> build-info.yaml"
     - "echo ci_commit_sha: ${CI_COMMIT_SHA} >> build-info.yaml"
@@ -22,7 +27,7 @@ build:
     - "echo ci_merge_request_project_url: \\\"${CI_MERGE_REQUEST_PROJECT_URL}\\\" >> \"build-info.yaml\""
     - "echo ci_merge_request_title: \\\"${CI_MERGE_REQUEST_TITLE}\\\" >> \"build-info.yaml\""
     - "echo ci_pipeline_iid: ${CI_PIPELINE_IID} >> build-info.yaml"
-    - "echo built_image: guardianmultimedia/pluto-userbeacon:$CI_PIPELINE_IID >> build-info.yaml"
+    - "echo built_image: 855023211239.dkr.ecr.eu-west-1.amazonaws.com/pluto-user-beacon:$CI_PIPELINE_IID >> build-info.yaml"
   artifacts:
     paths:
       - build-info.yaml    
