@@ -4,13 +4,12 @@ services:
   - docker:dind
   
 before_script:
-  - docker login -u "${DOCKER_USER}" -p "${DOCKER_PAT}"
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   
 build:
   stage: build
   script:
     - echo $DOCKER_HOST
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker build . $CI_REGISTRY_IMAGE:$CI_PIPELINE_IID
     - docker push $CI_REGISTRY_IMAGE:$CI_PIPELINE_IID
     - if [ "${AWS_ACCESS_KEY_ID}" == "" ]; then echo Cannot upload to ECR without aws credential; exit 0; fi
