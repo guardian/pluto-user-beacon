@@ -10,7 +10,7 @@ build:
   stage: build
   script:
     - echo $DOCKER_HOST
-    - docker build . $CI_REGISTRY_IMAGE:$CI_PIPELINE_IID
+    - docker build . -t $CI_REGISTRY_IMAGE:$CI_PIPELINE_IID
     - docker push $CI_REGISTRY_IMAGE:$CI_PIPELINE_IID
     - if [ "${AWS_ACCESS_KEY_ID}" == "" ]; then echo Cannot upload to ECR without aws credential; exit 0; fi
     - aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 855023211239.dkr.ecr.eu-west-1.amazonaws.com
