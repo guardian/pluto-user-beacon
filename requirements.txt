@@ -1,4 +1,4 @@
-Django==3.2.11
+Django==3.2.12
 uWSGI==2.0.18
 requests==2.25.1
 PyJWT==1.7.1
