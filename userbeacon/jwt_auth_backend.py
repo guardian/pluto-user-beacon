@@ -1,4 +1,6 @@
+from base64 import b64decode
 import logging
+from urllib.request import Request
 import jwt
 from django.contrib.auth.models import User
 from django.conf import settings
@@ -13,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class JwtAuth(object):
     @staticmethod
-    def load_public_key_from_cert():
+    def load_public_key():
         try:
             with open(settings.JWT_CERTIFICATE_PATH, "r") as certfile:
                 cert_raw = certfile.read().encode("ASCII")
@@ -22,9 +24,6 @@ class JwtAuth(object):
         except Exception as e:
             logger.error('Could not read certificate: ' + str(e))
             raise
-
-    def __init__(self):
-        self._public_key = self.load_public_key_from_cert()
 
     @staticmethod
     def _extract_username(claims):
@@ -38,15 +37,32 @@ class JwtAuth(object):
     def authenticate(self, request, **credentials):
         token = credentials.get("token", None)
         if token:
-            logger.debug("JwtAuth got token {0}".format(token))
+            if not settings.JWT_CERTIFICATE_PATH.startswith("http"):
+                public_key = self.load_public_key()
+            else:
+                jwks_url = settings.JWT_CERTIFICATE_PATH
+                response = Request.get(jwks_url)
+                jwks = response.json()
+                try:
+                    header = jwt.get_unverified_header(token)
+                    public_key = None
+                    for jwk in jwks['keys']:
+                        if jwk['kid'] == header['kid']:
+                            cert_str = "-----BEGIN CERTIFICATE-----\n" + jwk['x5c'][0] + "\n-----END CERTIFICATE-----\n"
+                            cert_obj = load_pem_x509_certificate(cert_str.encode(), default_backend())
+                            public_key = cert_obj.public_key()
+                            break
+                    if not public_key:
+                        return None
+                except (jwt.exceptions.InvalidTokenError, KeyError):
+                    return None
             try:
                 decoded = jwt.decode(token,
-                                     key=self._public_key,
+                                     key=public_key,
                                      algorithms=["RS256"],
                                      audience=getattr(settings, "JWT_EXPECTED_AUDIENCE", None),
                                      issuer=getattr(settings, "JWT_EXPECTED_ISSUER", None))
                 logger.debug("JwtAuth success")
-
                 return User(
                     username=self._extract_username(decoded),
                     first_name=decoded.get("first_name"),
@@ -86,3 +102,4 @@ class JwtRestAuth(BaseAuthentication):
                 raise AuthenticationFailed
         else:
             return None #authentication not attempted
+
