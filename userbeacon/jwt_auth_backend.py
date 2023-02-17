@@ -37,6 +37,7 @@ class JwtAuth(object):
     def authenticate(self, request, **credentials):
         token = credentials.get("token", None)
         if token:
+            logger.debug("JwtAuth got token {0}".format(token))
             if not settings.JWT_CERTIFICATE_PATH.startswith("http"):
                 public_key = self.load_public_key()
             else:
