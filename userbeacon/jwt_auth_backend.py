@@ -103,4 +103,3 @@ class JwtRestAuth(BaseAuthentication):
                 raise AuthenticationFailed
         else:
             return None #authentication not attempted
-

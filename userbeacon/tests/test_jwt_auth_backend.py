@@ -104,4 +104,8 @@ class JwtRestAuthTestCase(TestCase):
         user_model, auth_type = jwt_rest_auth.authenticate(request)
         self.assertIsInstance(user_model, User)
         self.assertEqual(auth_type, 'jwt')
-        
+        self.assertEqual(user_model.username, 'johndoe')
+        self.assertEqual(user_model.first_name, 'John')
+        self.assertEqual(user_model.last_name, 'Doe')
+        self.assertEqual(user_model.email, 'john.doe@example.com')
+        self.assertTrue(user_model.is_superuser)
