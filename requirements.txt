@@ -4,3 +4,4 @@ requests==2.25.1
 PyJWT==2.4.0
 cryptography==3.3.2
 djangorestframework==3.11.2
+urllib==1.24.3
