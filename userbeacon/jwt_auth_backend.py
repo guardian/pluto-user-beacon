@@ -1,6 +1,7 @@
 from base64 import b64decode
+import json
 import logging
-from urllib.request import Request
+from urllib.request import Request, urlopen
 import jwt
 from django.contrib.auth.models import User
 from django.conf import settings
@@ -42,8 +43,10 @@ class JwtAuth(object):
                 public_key = self.load_public_key()
             else:
                 jwks_url = settings.JWT_CERTIFICATE_PATH
-                response = Request.get(jwks_url)
-                jwks = response.json()
+                req = Request(jwks_url)
+                response = urlopen(req)
+                jwks = response.read().decode('utf-8')
+                jwks = json.loads(jwks)
                 try:
                     header = jwt.get_unverified_header(token)
                     public_key = None
