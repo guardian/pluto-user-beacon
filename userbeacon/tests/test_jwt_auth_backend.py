@@ -1,6 +1,7 @@
 import datetime
+import json
 import os
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
 import jwt
@@ -58,10 +59,10 @@ class JwtAuthTestCase(TestCase):
         self.assertTrue(user_model.is_superuser)
 
     @override_settings(JWT_CERTIFICATE_PATH='http://example.com/cert')
-    @patch('userbeacon.jwt_auth_backend.Request')
+    @patch('userbeacon.jwt_auth_backend.urlopen')
     def test_authenticate_with_remote_certificate(self, mock_request):
-        mock_response = mock_request.get.return_value
-        mock_response.json.return_value = {
+
+        jwks = {
             "keys": [
                 {
                     "kid": "1234",
@@ -69,7 +70,11 @@ class JwtAuthTestCase(TestCase):
                 }
             ]
         }
-        mock_response.status_code = 200
+        response = MagicMock()
+        response.read.return_value = json.dumps(jwks).encode('utf-8')
+        mock_request.return_value = response
+
+        response.status_code = 200
         user_model = self.jwt_auth.authenticate(None, token=self.token)
         self.assertIsInstance(user_model, User)
         self.assertEqual(user_model.username, 'johndoe')
