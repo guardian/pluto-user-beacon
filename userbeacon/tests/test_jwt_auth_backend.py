@@ -27,7 +27,7 @@ class JwtAuthTestCase(TestCase):
         private_key = open('userbeacon/tests/fixtures/private.key', 'r').read()
         self.token = jwt.encode(headers=header, payload=payload, key=private_key, algorithm='RS256')
 
-    @override_settings(JWT_CERTIFICATE_PATH='userbeacon/tests/fixtures/test_cert.pem')
+    @override_settings(JWT_CERTIFICATE_PATH='userbeacon/tests/fixtures/certificate.crt')
     def test_load_public_key(self):
         public_key = self.jwt_auth.load_public_key()
         self.assertIsNotNone(public_key)
@@ -65,7 +65,7 @@ class JwtAuthTestCase(TestCase):
             "keys": [
                 {
                     "kid": "1234",
-                    "x5c": ["MIIDETCCAfkCFB1XU7b3jnBoUijY9m21Y1Vjdfv6MA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwHhcNMjMwMjE2MTM0NDM0WhcNMjQwMjE2MTM0NDM0WjBFMQswCQYDVQQGEwJBVTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAt+Gbh1YIujYiUqe/uZA5Kb2IbOK3Pmx3uxlpFUBxS1H1V8jRiAMyGDgt6hmH6/ygR2lt1/EDlf8H5+ltwJnklW/1eOu5WvzySNynOtHx2nAUaozM2G4/qe1nlEMHjXMC9m7NkrJH39C9KmqweoC1DYXjOJ3UMQulS1woQu2dgoMNjm01amCYoVu1tbUZrl46OfaeZSXALkbG60gk8dSo7TykLvHqfEmR9w2RuT97OTwlUY6M480KEE3FwgDvCB4jEqMNYcuTvHIOFzUEHeWwZQlPe3jYdUfiG60tT7waTO23jCim52o9VGPJp7IWdIaInlLFp4OYPz0hJUJPVEt7uwIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQCc/w0k8e3M5GGp+MIcOktauDrPtVaku4QSnfPeR3wRSYmoV0ESu17N9vFxN9Q8ptfeVMzMCCro0UBGeYvaXHgrhKOV4OUlqj2L6C3+8mBTRHj+MqYDJ5AdEqA1/1tjrk1STSOf/RhKhvp7eKPxcypemgWECy8vvXww3e3LRKWySJToojI7c6GYs+aFqKQd4KIq2Ob77YSmG98Zp4q2NJRHGEAa/iEmkQjpPR8S2RF8X26EjRjjE+wpkmkQ2j/Hu0jy3mT0gAK0/IUsuKHFx5A2WpCnZMWigPhPLAzbGpVy+429JaVDIJsF+n3JtL9R6YcoJ6WC9T+mRfUD6IJRptsu"],
+                    "x5c": ["MIIDETCCAfkCFFuaV9SqRhz6PE12Jv40vjEOcg25MA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwHhcNMjMwMjE4MTAzNjA4WhcNMjQwMjE4MTAzNjA4WjBFMQswCQYDVQQGEwJBVTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvcw4cRhAPtp+z/Imi7tiXxRvf+yQ3bzbQBeRe2YLC9IgeN5n5wS6PSBi+HJFRNKEbnZKWl5wOPiWmgpIdpPmYq98EF/cDhs+re5ZT7GG0/+3wjFLE/p1q+Mb3/CgK8DxhzNblGS6SSZ6c24thg9A4Xu8HRvVaRn+K3zcfYNV8a2cZ2AUxAHdPov1KQ/BVVhwB4qmPaBfksvNFxi/X0nS74pUW1Czs64xNpRXT7EcWS9TL3sUEfzf6M1SV6urGy0zhDP5t4dppJ6AUDX1ytUiMccJ1PzNRnOvZPs2ogPBB6Tep/e08VUwKecAO6e7/BsWIW5fWuHME+c6LoxKnh3V/wIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQApBjYWIw1P51Ei6zRwP+DVDsLITaKrPyhtl4fSAoUqT27De/AJovtOyP5zxvhxfEQQqVCKe0o4IGgT6yHw0I0itV8X2X1EQEJvXkYVbhBPHsfa83YYXT0vqyXINpdRxTbKm6+lWwD71Z34dOmgQmr5bQLYzF2XFnGIBx62uZThsredjSEV32QChrvZyik/elsTFBA0eZqksPkEaXalKY1BOYx8PKCskVnwc+Od0EW5/RhEirTb2jNUMbDTtmESp5SBAT/YwZ77OBiJsqHDtlUckntnhjJTEa1LjrzKzMKNU3wtQpZ6hJUGI9VUMI3IkhYTc+RKG2c6Lu8FlNXi3xJu"],
                 }
             ]
         }
