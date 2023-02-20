@@ -1,7 +1,5 @@
 from base64 import b64decode
-import json
 import logging
-from urllib.request import Request, urlopen
 import jwt
 from django.contrib.auth.models import User
 from django.conf import settings
