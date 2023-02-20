@@ -1,4 +1,3 @@
-from base64 import b64decode
 import logging
 import jwt
 from django.contrib.auth.models import User
