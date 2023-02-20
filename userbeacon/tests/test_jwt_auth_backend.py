@@ -29,8 +29,8 @@ class JwtAuthTestCase(TestCase):
         self.token = jwt.encode(headers=header, payload=payload, key=private_key, algorithm='RS256')
 
     @override_settings(JWT_CERTIFICATE_PATH='userbeacon/tests/fixtures/certificate.crt')
-    def test_load_public_key(self):
-        public_key = self.jwt_auth.load_public_key()
+    def test_load_local_public_key(self):
+        public_key = self.jwt_auth.load_local_public_key()
         self.assertIsNotNone(public_key)
 
     def test_extract_username(self):
@@ -58,33 +58,55 @@ class JwtAuthTestCase(TestCase):
         self.assertTrue(user_model.is_active)
         self.assertTrue(user_model.is_superuser)
 
-    @override_settings(JWT_CERTIFICATE_PATH='http://example.com/cert')
-    @patch('userbeacon.jwt_auth_backend.urlopen')
-    def test_authenticate_with_remote_certificate(self, mock_request):
+    @override_settings(JWT_CERTIFICATE_PATH='https://example.com/cert.pem')
+    @patch('userbeacon.jwt_auth_backend.jwt')
+    def test_load_remote_public_key_with_valid_token(self, mock_jwt):
+        mock_jwks_client = MagicMock()
+        mock_jwks_client.get_signing_key_from_jwt.return_value = MagicMock(key='public_key')
+        mock_jwt.PyJWKClient.return_value = mock_jwks_client
+        public_key = self.jwt_auth.load_remote_public_key('valid_token')
+        self.assertEqual(public_key, 'public_key')
+        mock_jwt.PyJWKClient.assert_called_once_with('https://example.com/cert.pem')
+        mock_jwks_client.get_signing_key_from_jwt.assert_called_once_with('valid_token')
 
-        jwks = {
-            "keys": [
-                {
-                    "kid": "1234",
-                    "x5c": ["MIIDETCCAfkCFFuaV9SqRhz6PE12Jv40vjEOcg25MA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwHhcNMjMwMjE4MTAzNjA4WhcNMjQwMjE4MTAzNjA4WjBFMQswCQYDVQQGEwJBVTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvcw4cRhAPtp+z/Imi7tiXxRvf+yQ3bzbQBeRe2YLC9IgeN5n5wS6PSBi+HJFRNKEbnZKWl5wOPiWmgpIdpPmYq98EF/cDhs+re5ZT7GG0/+3wjFLE/p1q+Mb3/CgK8DxhzNblGS6SSZ6c24thg9A4Xu8HRvVaRn+K3zcfYNV8a2cZ2AUxAHdPov1KQ/BVVhwB4qmPaBfksvNFxi/X0nS74pUW1Czs64xNpRXT7EcWS9TL3sUEfzf6M1SV6urGy0zhDP5t4dppJ6AUDX1ytUiMccJ1PzNRnOvZPs2ogPBB6Tep/e08VUwKecAO6e7/BsWIW5fWuHME+c6LoxKnh3V/wIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQApBjYWIw1P51Ei6zRwP+DVDsLITaKrPyhtl4fSAoUqT27De/AJovtOyP5zxvhxfEQQqVCKe0o4IGgT6yHw0I0itV8X2X1EQEJvXkYVbhBPHsfa83YYXT0vqyXINpdRxTbKm6+lWwD71Z34dOmgQmr5bQLYzF2XFnGIBx62uZThsredjSEV32QChrvZyik/elsTFBA0eZqksPkEaXalKY1BOYx8PKCskVnwc+Od0EW5/RhEirTb2jNUMbDTtmESp5SBAT/YwZ77OBiJsqHDtlUckntnhjJTEa1LjrzKzMKNU3wtQpZ6hJUGI9VUMI3IkhYTc+RKG2c6Lu8FlNXi3xJu"],
-                }
-            ]
+    @override_settings(JWT_CERTIFICATE_PATH='https://example.com/cert.pem')
+    @patch('userbeacon.jwt_auth_backend.JwtAuth.load_remote_public_key')
+    def test_authenticate_with_remote_public_key(self, mock_load_remote_public_key):
+        expected_username = 'testuser'
+        expected_first_name = 'Test'
+        expected_last_name = 'User'
+        expected_email = 'testuser@example.com'
+        token = 'test_token'
+        mock_public_key = MagicMock()
+        mock_public_key.return_value = 'test_public_key'
+        mock_load_remote_public_key.return_value = mock_public_key
+        expected_user = {
+            'username': expected_username,
+            'first_name': expected_first_name,
+            'family_name': expected_last_name,
+            'email': expected_email,
+            'is_staff': True,
+            'is_active': True,
+            'is_superuser': True,
         }
-        response = MagicMock()
-        response.read.return_value = json.dumps(jwks).encode('utf-8')
-        mock_request.return_value = response
 
-        response.status_code = 200
-        user_model = self.jwt_auth.authenticate(None, token=self.token)
-        self.assertIsInstance(user_model, User)
-        self.assertEqual(user_model.username, 'johndoe')
-        self.assertEqual(user_model.first_name, 'John')
-        self.assertEqual(user_model.last_name, 'Doe')
-        self.assertEqual(user_model.email, 'john.doe@example.com')
-        self.assertTrue(user_model.is_staff)
-        self.assertTrue(user_model.is_active)
-        self.assertTrue(user_model.is_superuser)
-        
+        mock_jwt_decode = MagicMock()
+        mock_jwt_decode.return_value = expected_user
+        with patch('jwt.decode', mock_jwt_decode):
+
+            user = self.jwt_auth.authenticate(None, token=token)
+
+            self.assertEqual(user.username, expected_username)
+            self.assertEqual(user.first_name, expected_first_name)
+            self.assertEqual(user.last_name, expected_last_name)
+            self.assertEqual(user.email, expected_email)
+            self.assertTrue(user.is_staff)
+            self.assertTrue(user.is_active)
+            self.assertTrue(user.is_superuser)
+
+        # Assert that the load_remote_public_key method is called with the correct arguments
+        mock_load_remote_public_key.assert_called_with(token)
+
 
 class JwtRestAuthTestCase(TestCase):
     @override_settings(JWT_CERTIFICATE_PATH='userbeacon/tests/fixtures/certificate.crt')

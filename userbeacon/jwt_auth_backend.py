@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class JwtAuth(object):
     @staticmethod
-    def load_public_key():
+    def load_local_public_key():
         try:
             with open(settings.JWT_CERTIFICATE_PATH, "r") as certfile:
                 cert_raw = certfile.read().encode("ASCII")
@@ -25,6 +25,12 @@ class JwtAuth(object):
         except Exception as e:
             logger.error('Could not read certificate: ' + str(e))
             raise
+
+    @staticmethod
+    def load_remote_public_key(token):
+        jwks_url = settings.JWT_CERTIFICATE_PATH
+        jwks_client = jwt.PyJWKClient(jwks_url)
+        return jwks_client.get_signing_key_from_jwt(token).key
 
     @staticmethod
     def _extract_username(claims):
@@ -40,26 +46,10 @@ class JwtAuth(object):
         if token:
             logger.debug("JwtAuth got token {0}".format(token))
             if not settings.JWT_CERTIFICATE_PATH.startswith("http"):
-                public_key = self.load_public_key()
+                public_key = self.load_local_public_key()
             else:
-                jwks_url = settings.JWT_CERTIFICATE_PATH
-                req = Request(jwks_url)
-                response = urlopen(req)
-                jwks = response.read().decode('utf-8')
-                jwks = json.loads(jwks)
-                try:
-                    header = jwt.get_unverified_header(token)
-                    public_key = None
-                    for jwk in jwks['keys']:
-                        if jwk['kid'] == header['kid']:
-                            cert_str = "-----BEGIN CERTIFICATE-----\n" + jwk['x5c'][0] + "\n-----END CERTIFICATE-----\n"
-                            cert_obj = load_pem_x509_certificate(cert_str.encode(), default_backend())
-                            public_key = cert_obj.public_key()
-                            break
-                    if not public_key:
-                        return None
-                except (jwt.exceptions.InvalidTokenError, KeyError):
-                    return None
+                public_key = self.load_remote_public_key(token)
+    
             try:
                 decoded = jwt.decode(token,
                                      key=public_key,
