@@ -31,11 +31,13 @@ class JwtAuth(object):
 
     @staticmethod
     def _extract_username(claims):
-        username = claims.get("username")   #adfs uses this one
+        username = claims.get("username")   #adfs(deprecated) uses this
         if username is None:
-            username = claims.get("preferred_username") #keycloak uses this one
+            username = claims.get("preferred_username") #keycloak and Azure AD use this
         if username is None:
             logger.warning("Could not get username from claims set, expect problems")
+        if username is not None and "@" in username:
+                username = username.split("@")[0].replace(".", "_")
         return username
 
     def authenticate(self, request, **credentials):

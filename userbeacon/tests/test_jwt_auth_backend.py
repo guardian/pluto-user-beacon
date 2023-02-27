@@ -1,6 +1,4 @@
 import datetime
-import json
-import os
 from unittest.mock import MagicMock, patch
 from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
@@ -45,6 +43,11 @@ class JwtAuthTestCase(TestCase):
         claims = {}
         username = self.jwt_auth._extract_username(claims)
         self.assertIsNone(username)
+
+    def test_extract_username_with_email_as_prefered_username(self):
+        claims = {'preferred_username': 'joe.bloggs@example.com'}
+        username = self.jwt_auth._extract_username(claims)
+        self.assertEqual(username, 'joe_bloggs')
 
     @override_settings(JWT_CERTIFICATE_PATH='userbeacon/tests/fixtures/certificate.crt')
     def test_authenticate_with_local_cert(self):
