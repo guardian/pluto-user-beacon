@@ -1,4 +1,4 @@
-FROM python:3.9-alpine
+FROM python:3.9-alpine3.12
 
 COPY requirements.txt /opt/pluto-userbeacon/requirements.txt
 WORKDIR /opt/pluto-userbeacon
@@ -11,4 +11,4 @@ RUN chown -R nobody /opt/pluto-userbeacon
 ENV PYTHONPATH=/opt/pluto-userbeacon
 WORKDIR /opt/pluto-userbeacon
 USER nobody
-CMD uwsgi --http :9000 --enable-threads -L --module userbeacon.wsgi
+CMD uwsgi --http :9000 --enable-threads -L --module userbeacon.wsgi --buffer-size=8192
