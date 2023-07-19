@@ -1,5 +1,5 @@
 Django==3.2.15
-uWSGI==2.0.18
+uWSGI==2.0.21
 requests==2.25.1
 PyJWT==2.4.0
 cryptography==3.3.2
