@@ -1,31 +1,30 @@
-FROM python:3.9-bookworm
+FROM python:3.12.0-alpine3.18
 
-COPY requirements.txt /opt/pluto-userbeacon/requirements.txt
 WORKDIR /opt/pluto-userbeacon
 
-# Update package list and install dependencies using apt-get
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libffi-dev \
-    libssl-dev \
-    && pip install -r requirements.txt \
-    && apt-get remove -y \
-    build-essential \
-    libffi-dev \
-    && apt-get autoremove -y \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# Install system dependencies
+RUN apk update \
+  && apk add netcat-openbsd \
+  && apk add --virtual py3-pip build-base \
+  && apk add --virtual python3-dev gcc libc-dev linux-headers pcre-dev
 
-RUN pip install -r requirements.txt
+COPY requirements.txt .
 
-ADD userbeacon /opt/pluto-userbeacon/userbeacon
-ADD k8s_settings /opt/pluto-userbeacon/k8s_settings
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-# The chown command remains unchanged
-RUN chown -R nobody /opt/pluto-userbeacon
+COPY userbeacon /opt/pluto-userbeacon/userbeacon
+COPY k8s_settings /opt/pluto-userbeacon/k8s_settings
 
+# Set the ownership of application files
+RUN chown -R nobody:nogroup /opt/pluto-userbeacon
+
+# Set environment variables
 ENV PYTHONPATH=/opt/pluto-userbeacon
 
+# Switch to a non-root user
 USER nobody
-CMD uwsgi --http :9000 --enable-threads -L --module userbeacon.wsgi --buffer-size=8192
+
+# Set the command to start uWSGI
+CMD ["uwsgi", "--http", ":9000", "--enable-threads", "-L", "--module", "userbeacon.wsgi", "--buffer-size=8192"]
 
