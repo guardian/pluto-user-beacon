@@ -7,7 +7,8 @@ RUN apk update \
   && apk add netcat-openbsd \
   && apk add --virtual py3-pip build-base \
   && apk add --virtual python3-dev gcc libc-dev linux-headers pcre-dev \
-  && apk add libexpat=2.6.4-r0
+  && apk add libexpat=2.6.4-r0 \
+  && apk add libffi-dev
 
 COPY requirements.txt .
 
