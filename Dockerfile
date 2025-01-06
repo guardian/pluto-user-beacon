@@ -1,4 +1,4 @@
-FROM python:3.11-alpine3.18
+FROM python:3.14.0a3-alpine3.20
 
 WORKDIR /opt/pluto-userbeacon
 
